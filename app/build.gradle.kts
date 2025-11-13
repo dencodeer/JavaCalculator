@@ -3,13 +3,16 @@ plugins {
 }
 
 android {
-    namespace = "com.example.javacalculator"
+    namespace = "com.example.calculator"
     compileSdk {
         version = release(36)
     }
+    buildFeatures {
+        viewBinding = true
+    }
 
     defaultConfig {
-        applicationId = "com.example.javacalculator"
+        applicationId = "com.example.calculator"
         minSdk = 31
         targetSdk = 36
         versionCode = 1
@@ -41,4 +44,5 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    implementation(libs.material)
 }
