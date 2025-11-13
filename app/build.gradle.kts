@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.calculator"
+    namespace = "com.example.javacalculator"
     compileSdk {
         version = release(36)
     }
@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.calculator"
+        applicationId = "com.example.javacalculator"
         minSdk = 31
         targetSdk = 36
         versionCode = 1

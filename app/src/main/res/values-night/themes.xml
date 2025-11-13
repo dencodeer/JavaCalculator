@@ -1,7 +1,31 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.JavaCalculator" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+    <style name="Base.Theme.Calculator" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/purple_200</item>
+        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorSecondary">@color/teal_200</item>
+        <item name="colorSecondaryVariant">@color/teal_200</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+    </style>
+
+    <style name="Theme.Calculator" parent="Base.Theme.Calculator" />
+
+    <style name="CalculatorButton.Number">
+        <item name="android:backgroundTint">#424242</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="rippleColor">#616161</item>
+    </style>
+
+    <style name="CalculatorButton.Operation">
+        <item name="android:backgroundTint">#1E88E5</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="rippleColor">#1565C0</item>
+    </style>
+
+    <style name="CalculatorButton.Equals">
+        <item name="android:backgroundTint">#1976D2</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="rippleColor">#0D47A1</item>
     </style>
 </resources>
