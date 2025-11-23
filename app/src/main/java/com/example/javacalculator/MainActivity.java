@@ -13,11 +13,13 @@ public class MainActivity extends AppCompatActivity {
     private double firstNumber = 0;
     private double secondNumber = 0;
     private boolean isNewCalculation = true;
+    private boolean shouldResetDisplay = false;
 
     private static final String KEY_CURRENT_DISPLAY = "current_display";
     private static final String KEY_CURRENT_OPERATION = "current_operation";
     private static final String KEY_FIRST_NUMBER = "first_number";
     private static final String KEY_IS_NEW_CALCULATION = "is_new_calculation";
+    private static final String KEY_SHOULD_RESET_DISPLAY = "should_reset_display";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
             currentOperation = savedInstanceState.getString(KEY_CURRENT_OPERATION, "");
             firstNumber = savedInstanceState.getDouble(KEY_FIRST_NUMBER, 0);
             isNewCalculation = savedInstanceState.getBoolean(KEY_IS_NEW_CALCULATION, true);
+            shouldResetDisplay = savedInstanceState.getBoolean(KEY_SHOULD_RESET_DISPLAY, false);
         }
 
         setupUI();
@@ -45,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
         outState.putString(KEY_CURRENT_OPERATION, currentOperation);
         outState.putDouble(KEY_FIRST_NUMBER, firstNumber);
         outState.putBoolean(KEY_IS_NEW_CALCULATION, isNewCalculation);
+        outState.putBoolean(KEY_SHOULD_RESET_DISPLAY, shouldResetDisplay);
     }
 
     private void setupUI() {
@@ -76,9 +80,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void appendNumber(String number) {
-        if (currentDisplay.equals("0") || isNewCalculation) {
+        if (currentDisplay.equals("0") || isNewCalculation || shouldResetDisplay) {
             currentDisplay = number;
             isNewCalculation = false;
+            shouldResetDisplay = false;
         } else {
             currentDisplay += number;
         }
@@ -86,9 +91,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void appendDecimal() {
-        if (isNewCalculation) {
+        if (isNewCalculation || shouldResetDisplay) {
             currentDisplay = "0.";
             isNewCalculation = false;
+            shouldResetDisplay = false;
         } else if (!currentDisplay.contains(".")) {
             currentDisplay += ".";
         }
@@ -96,20 +102,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setOperation(String operation) {
-        if (!isNewCalculation) {
-            if (!currentOperation.isEmpty()) {
+        try {
+            if (!currentOperation.isEmpty() && !shouldResetDisplay) {
                 calculateResult();
             }
 
-            try {
+            if (!shouldResetDisplay) {
                 firstNumber = Double.parseDouble(currentDisplay);
-                currentOperation = operation;
-                binding.tvOperation.setText(currentDisplay + " " + operation);
-                isNewCalculation = true;
-            } catch (NumberFormatException e) {
-                showError("Ошибка ввода числа");
-                clearDisplay();
             }
+
+            currentOperation = operation;
+            binding.tvOperation.setText(formatNumber(firstNumber) + " " + operation);
+            shouldResetDisplay = true;
+
+        } catch (NumberFormatException e) {
+            showError("Ошибка ввода числа");
+            clearDisplay();
         }
     }
 
@@ -119,27 +127,35 @@ public class MainActivity extends AppCompatActivity {
         firstNumber = 0;
         secondNumber = 0;
         isNewCalculation = true;
+        shouldResetDisplay = false;
         binding.tvOperation.setText("");
         updateDisplay();
     }
 
     private void backspace() {
-        if (!isNewCalculation && currentDisplay.length() > 1) {
+        if (!isNewCalculation && currentDisplay.length() > 1 && !shouldResetDisplay) {
             currentDisplay = currentDisplay.substring(0, currentDisplay.length() - 1);
         } else {
             currentDisplay = "0";
             isNewCalculation = true;
+            shouldResetDisplay = false;
         }
         updateDisplay();
     }
 
     private void calculateResult() {
-        if (!currentOperation.isEmpty() && !isNewCalculation) {
+        if (!currentOperation.isEmpty()) {
             try {
-                secondNumber = Double.parseDouble(currentDisplay);
+                if (!shouldResetDisplay) {
+                    secondNumber = Double.parseDouble(currentDisplay);
+                }
+
                 double result = performCalculation(firstNumber, secondNumber, currentOperation);
 
-                String expression = binding.tvOperation.getText().toString() + " " + currentDisplay;
+                String expression = binding.tvOperation.getText().toString();
+                if (!shouldResetDisplay) {
+                    expression += " " + formatNumber(secondNumber);
+                }
                 binding.tvOperation.setText(expression + " =");
 
                 if (Double.isInfinite(result)) {
@@ -149,14 +165,11 @@ public class MainActivity extends AppCompatActivity {
                     currentDisplay = "Ошибка";
                     showError("Неопределенный результат");
                 } else {
-                    if (result == (long) result) {
-                        currentDisplay = String.valueOf((long) result);
-                    } else {
-                        currentDisplay = String.valueOf(result);
-                    }
+                    currentDisplay = formatNumber(result);
+                    firstNumber = result;
                 }
 
-                isNewCalculation = true;
+                shouldResetDisplay = true;
                 updateDisplay();
 
             } catch (NumberFormatException e) {
@@ -185,6 +198,21 @@ public class MainActivity extends AppCompatActivity {
                 return num1 / num2;
             default:
                 return num2;
+        }
+    }
+
+    private String formatNumber(double number) {
+        if (number == (long) number) {
+            return String.valueOf((long) number);
+        } else {
+            String result = String.valueOf(number);
+            if (result.contains(".") && result.length() > 10) {
+                result = String.format("%.6f", number).replace(",", ".");
+                while (result.contains(".") && (result.endsWith("0") || result.endsWith("."))) {
+                    result = result.substring(0, result.length() - 1);
+                }
+            }
+            return result;
         }
     }
 
