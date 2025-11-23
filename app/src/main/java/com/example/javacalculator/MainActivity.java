@@ -10,9 +10,14 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private String currentDisplay = "0";
     private String currentOperation = "";
+    private double firstNumber = 0;
+    private double secondNumber = 0;
+    private boolean isNewCalculation = true;
 
     private static final String KEY_CURRENT_DISPLAY = "current_display";
     private static final String KEY_CURRENT_OPERATION = "current_operation";
+    private static final String KEY_FIRST_NUMBER = "first_number";
+    private static final String KEY_IS_NEW_CALCULATION = "is_new_calculation";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,6 +30,8 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
             currentDisplay = savedInstanceState.getString(KEY_CURRENT_DISPLAY, "0");
             currentOperation = savedInstanceState.getString(KEY_CURRENT_OPERATION, "");
+            firstNumber = savedInstanceState.getDouble(KEY_FIRST_NUMBER, 0);
+            isNewCalculation = savedInstanceState.getBoolean(KEY_IS_NEW_CALCULATION, true);
         }
 
         setupUI();
@@ -36,6 +43,8 @@ public class MainActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         outState.putString(KEY_CURRENT_DISPLAY, currentDisplay);
         outState.putString(KEY_CURRENT_OPERATION, currentOperation);
+        outState.putDouble(KEY_FIRST_NUMBER, firstNumber);
+        outState.putBoolean(KEY_IS_NEW_CALCULATION, isNewCalculation);
     }
 
     private void setupUI() {
@@ -67,8 +76,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void appendNumber(String number) {
-        if (currentDisplay.equals("0")) {
+        if (currentDisplay.equals("0") || isNewCalculation) {
             currentDisplay = number;
+            isNewCalculation = false;
         } else {
             currentDisplay += number;
         }
@@ -76,41 +86,110 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void appendDecimal() {
-        if (!currentDisplay.contains(".")) {
+        if (isNewCalculation) {
+            currentDisplay = "0.";
+            isNewCalculation = false;
+        } else if (!currentDisplay.contains(".")) {
             currentDisplay += ".";
-            updateDisplay();
         }
+        updateDisplay();
     }
 
     private void setOperation(String operation) {
-        currentOperation = operation;
-        binding.tvOperation.setText(currentDisplay + " " + operation);
-        currentDisplay = "0";
-        updateDisplay();
+        if (!isNewCalculation) {
+            if (!currentOperation.isEmpty()) {
+                calculateResult();
+            }
+
+            try {
+                firstNumber = Double.parseDouble(currentDisplay);
+                currentOperation = operation;
+                binding.tvOperation.setText(currentDisplay + " " + operation);
+                isNewCalculation = true;
+            } catch (NumberFormatException e) {
+                showError("Ошибка ввода числа");
+                clearDisplay();
+            }
+        }
     }
 
     private void clearDisplay() {
         currentDisplay = "0";
         currentOperation = "";
+        firstNumber = 0;
+        secondNumber = 0;
+        isNewCalculation = true;
         binding.tvOperation.setText("");
         updateDisplay();
     }
 
     private void backspace() {
-        if (currentDisplay.length() > 1) {
+        if (!isNewCalculation && currentDisplay.length() > 1) {
             currentDisplay = currentDisplay.substring(0, currentDisplay.length() - 1);
         } else {
             currentDisplay = "0";
+            isNewCalculation = true;
         }
         updateDisplay();
     }
 
     private void calculateResult() {
-        if (!currentOperation.isEmpty()) {
-            String expression = binding.tvOperation.getText().toString() + " " + currentDisplay;
-            binding.tvOperation.setText(expression + " =");
-            Toast.makeText(this, "Расчеты будут добавлены позже", Toast.LENGTH_SHORT).show();
+        if (!currentOperation.isEmpty() && !isNewCalculation) {
+            try {
+                secondNumber = Double.parseDouble(currentDisplay);
+                double result = performCalculation(firstNumber, secondNumber, currentOperation);
+
+                String expression = binding.tvOperation.getText().toString() + " " + currentDisplay;
+                binding.tvOperation.setText(expression + " =");
+
+                if (Double.isInfinite(result)) {
+                    currentDisplay = "Ошибка";
+                    showError("Деление на ноль");
+                } else if (Double.isNaN(result)) {
+                    currentDisplay = "Ошибка";
+                    showError("Неопределенный результат");
+                } else {
+                    if (result == (long) result) {
+                        currentDisplay = String.valueOf((long) result);
+                    } else {
+                        currentDisplay = String.valueOf(result);
+                    }
+                }
+
+                isNewCalculation = true;
+                updateDisplay();
+
+            } catch (NumberFormatException e) {
+                showError("Ошибка ввода числа");
+                clearDisplay();
+            } catch (ArithmeticException e) {
+                showError("Арифметическая ошибка");
+                currentDisplay = "Ошибка";
+                updateDisplay();
+            }
         }
+    }
+
+    private double performCalculation(double num1, double num2, String operation) {
+        switch (operation) {
+            case "+":
+                return num1 + num2;
+            case "-":
+                return num1 - num2;
+            case "×":
+                return num1 * num2;
+            case "÷":
+                if (num2 == 0) {
+                    throw new ArithmeticException("Division by zero");
+                }
+                return num1 / num2;
+            default:
+                return num2;
+        }
+    }
+
+    private void showError(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
     private void updateDisplay() {
