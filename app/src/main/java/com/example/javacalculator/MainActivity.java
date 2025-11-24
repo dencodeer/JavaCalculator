@@ -13,6 +13,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.example.javacalculator.databinding.ActivityMainBinding;
 import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.snackbar.Snackbar;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
@@ -182,6 +183,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         shouldResetDisplay = false;
         binding.tvOperation.setText("");
         updateDisplay();
+        showSnackbar("Дисплей очищен");
     }
 
     private void backspace() {
@@ -193,6 +195,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             shouldResetDisplay = false;
         }
         updateDisplay();
+    }
+
+    private void showSnackbar(String message) {
+        Snackbar.make(binding.getRoot(), message, Snackbar.LENGTH_SHORT)
+                .show();
     }
 
     private void calculateResult() {
@@ -212,28 +219,31 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
                 if (Double.isInfinite(result)) {
                     currentDisplay = "Ошибка";
-                    showError("Деление на ноль");
+                    showSnackbar("Деление на ноль невозможно");
                 } else if (Double.isNaN(result)) {
                     currentDisplay = "Ошибка";
-                    showError("Неопределенный результат");
+                    showSnackbar("Неопределенный результат");
                 } else {
                     currentDisplay = formatNumber(result);
                     firstNumber = result;
+                    showSnackbar("Результат: " + currentDisplay);
                 }
 
                 shouldResetDisplay = true;
                 updateDisplay();
 
             } catch (NumberFormatException e) {
-                showError("Ошибка ввода числа");
+                showSnackbar("Ошибка ввода числа");
                 clearDisplay();
             } catch (ArithmeticException e) {
-                showError("Арифметическая ошибка");
+                showSnackbar("Арифметическая ошибка");
                 currentDisplay = "Ошибка";
                 updateDisplay();
             }
         }
     }
+
+
 
     private double performCalculation(double num1, double num2, String operation) {
         switch (operation) {
@@ -275,4 +285,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void updateDisplay() {
         binding.etDisplay.setText(currentDisplay);
     }
+
+
 }
